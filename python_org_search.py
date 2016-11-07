@@ -8,15 +8,17 @@ from selenium.common.exceptions import NoSuchElementException
 urls = []
 component_results = []
 finish_count = 0
+total_count = 0
 
 # Get url list from local file
 with open('url_list.txt', 'r') as url_list:
     for url in url_list.readlines():
         urls.append(url.strip())
 
-print("Total links %d" % len(urls))
+total_count = len(urls)
+print("Total links %d" % total_count)
 
-driver = webdriver.Firefox()
+driver = webdriver.Chrome()
 
 for url in urls:
     result = [url]
@@ -25,14 +27,14 @@ for url in urls:
 
     # Get bread crumb
     try:
-        driver.find_element_by_css_selector('span.hidden-all')
+        driver.find_element_by_css_selector('div.bread-crumb span.hidden-all')
     except NoSuchElementException:
         result.append('bread_crumb')
     else:
         pass
     # Get left navigation
     try:
-        left_nav = driver.find_element_by_css_selector('div.hidden-all')
+        left_nav = driver.find_element_by_css_selector('div.hidden-all div.documentation-navigation')
     except NoSuchElementException:
         result.append('left_nav')
     else:
@@ -46,11 +48,11 @@ for url in urls:
         result.append('page_selector')
     # Get right navigation bar
     try:
-        right_nav = driver.find_element_by_css_selector('div.documentation-bookmark')
+        right_nav = driver.find_element_by_css_selector('div.hidden-all div.documentation-bookmark')
     except NoSuchElementException:
-        pass
-    else:
         result.append('right_nav')
+    else:
+        pass
 
     line = ','.join(result)
     component_results.append(line)
@@ -58,12 +60,16 @@ for url in urls:
     finish_count += 1
     print("Finish %d" % finish_count)
 
-driver.close()
+    if len(component_results) > 100 or finish_count == total_count:
+        # Write results to local file
+        with open('results.txt', 'a') as out_file:
+            for line in component_results:
+                out_file.write(line + '\n')
+        
+        # clean results
+        del component_results[:]
 
-# Write results to local file
-with open('results.txt', 'a') as out_file:
-    for line in component_results:
-        out_file.write(line + '\n')
+driver.close()
 
 # Finish
 print "Done"
